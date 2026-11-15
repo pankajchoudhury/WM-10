@@ -11,23 +11,26 @@ No training code or training data is needed to run the tests.
 
 ## Examples
 
-**The ten classes.** The *Domestic* class merges cows and goats.
+**Representative examples of the ten animal classes in WM-10-Original.** Cow and Goat are grouped under the Domestic class.
 
 ![Ten classes](assets/classes.jpg)
 
-**Synthetic conditions used for robust fine-tuning.** The box (magenta) is drawn once on the clean image. It stays valid in every condition, so no new labels are needed. The night image is brightened here for display.
+**Original image and five environmental transformations used in WM-10-Robust.** The bounding-box annotations remain unchanged.
 
 ![Synthetic conditions](assets/conditions.jpg)
 
-**Synthetic test results (mAP50-95).** Robust fine-tuning recovers most of the loss at night and under IR, and clean accuracy does not drop.
+**Condition-wise species-level detection performance (mAP50:95) of (a) YOLO26n and (b) YOLO26m.** Grey bars: normal fine-tuning (Normal FT). Blue bars: robust fine-tuning (Robust FT).
 
 ![Synthetic test results](assets/synthetic_results.png)
 
-**Real camera-trap video (YOLO26m).** Both panels show the same frame at 34 s:
-- the normal model misses the tiger, so it only logs;
-- the robust model finds it and raises an ALERT.
+**Qualitative images from the WM-10-CameraTrap test set, predicted by normal and robust fine-tuned YOLO26m.** Green boxes are correct species predictions. Red dashed boxes are incorrect predictions.
 
-The timeline below them shows when each model's alert is on. The alert is on when 2 of the last 3 frames are ALERT.
+![Real-world examples](assets/qualitative_real.jpg)
+
+**Video-based wildlife alert evaluation using YOLO26m.**
+- The upper panels compare normal and robust fine-tuning at t = 34.0 s.
+- The lower panel shows the ALERT and LOG decisions over time, after two-out-of-three-frame smoothing.
+- The dark bar shows when the animal is present, and the dotted line marks the selected frame.
 
 ![Video alert example](assets/video_alert.png)
 
@@ -61,7 +64,7 @@ The repository itself holds:
 ```
 test_real_images.py   real-image test: mAP per condition + ALERT/LOG confusion matrix
 test_video.py         video test: ALERT/LOG per frame, smoothed alert timeline, scores
-expected_results/     our numbers; the scripts print them next to yours
+expected_results/     the paper's numbers; the scripts print them next to yours
 assets/               the example figures above
 ```
 
@@ -112,40 +115,38 @@ Outputs go to `results/real_images/` and `results/video/`:
 
 ## Expected results
 
-### Real images: mAP50-95 per condition
+These are the results reported in the paper. The scripts print them in brackets next to your values.
 
-| Model | Day | Fog | Night | IR | Mean |
+### Real-world detection performance (mAP50:95) on WM-10-CameraTrap (`test_real_images.py`)
+
+The value is the mean over the day, fog, night and IR images. N and R denote normal and robust fine-tuning.
+
+| Detector | N | R (Δ) |
+|---|---|---|
+| YOLO26n | 0.173 | 0.203 (+0.030) |
+| YOLO26m | 0.200 | 0.219 (+0.019) |
+
+### Wildlife alert decisions on 183 real-world images (`test_real_images.py`)
+
+Columns show the predicted actions, grouped by the true action.
+
+| Detector | FT | True ALERT (112): ALERT | True ALERT (112): LOG | True LOG (71): ALERT | True LOG (71): LOG |
 |---|---|---|---|---|---|
-| YOLO26n normal | 0.270 | 0.177 | 0.101 | 0.142 | 0.173 |
-| YOLO26n robust | 0.283 | 0.230 | 0.142 | 0.155 | 0.203 |
-| YOLO26m normal | 0.315 | 0.202 | 0.133 | 0.150 | 0.200 |
-| YOLO26m robust | 0.287 | 0.256 | 0.163 | 0.171 | 0.219 |
+| YOLO26n | N | 44 | 68 | 13 | 58 |
+| | R | 67 | 45 | 2 | 69 |
+| YOLO26m | N | 50 | 62 | 3 | 68 |
+| | R | 70 | 42 | 1 | 70 |
 
-These use the default Ultralytics validation settings, with image size 640 and batch size 32.
+### Video-based alert evaluation, YOLO26m (`test_video.py`)
 
-### Real images: ALERT / LOG confusion
+The 49.9 s camera-trap video is evaluated with 250 frames sampled at 5 fps. It shows a leopard, then a tiger. The alert is on when an ALERT prediction appears in at least 2 of the last 3 frames.
 
-There are 183 images: 112 need an ALERT and 71 are LOG.
+| Detector | FT | Correct alert time (s) | Correct alert coverage |
+|---|---|---|---|
+| YOLO26m | N | 22.6 | 45.7% |
+| | R | 39.4 | 79.8% |
 
-| Model | True ALERT → ALERT | True ALERT → LOG (missed) | True LOG → ALERT (false) | True LOG → LOG |
-|---|---|---|---|---|
-| YOLO26n normal | 44 | 68 | 13 | 58 |
-| YOLO26n robust | 67 | 45 | 2 | 69 |
-| YOLO26m normal | 50 | 62 | 3 | 68 |
-| YOLO26m robust | 70 | 42 | 1 | 70 |
-
-### Video: GF5LRYXabHU
-
-A dangerous animal is on screen for 49.4 s of the clip. The table shows the smoothed alert.
-
-| Model | Alert ON (s) | Correct (s) | False (s) | Coverage | Alert onsets |
-|---|---|---|---|---|---|
-| YOLO26n normal | 29.2 | 28.6 | 0.6 | 57.9% | 6 |
-| YOLO26n robust | 39.6 | 39.0 | 0.6 | 78.9% | 5 |
-| YOLO26m normal | 22.6 | 22.6 | 0.0 | 45.7% | 4 |
-| YOLO26m robust | 39.4 | 39.4 | 0.0 | 79.8% | 3 |
-
-Our image results were computed on an NVIDIA P100 GPU with `ultralytics==8.4.175`. A different GPU, a CPU, or another library version can change the values in the third decimal place. It can also change single image decisions.
+The paper's image results were computed on an NVIDIA P100 GPU and its video results on Google Colab, both with `ultralytics==8.4.175`. A different GPU, a CPU, or another library version can change the values in the third decimal place. It can also change single image decisions.
 
 ## Data notes
 
