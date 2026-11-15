@@ -1,0 +1,5 @@
+# Versions used for the paper's results (Python 3.11).
+ultralytics==8.4.175
+torch>=2.1
+opencv-python
+numpy
