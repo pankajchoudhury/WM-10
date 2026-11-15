@@ -33,9 +33,15 @@ The timeline below them shows when each model's alert is on. The alert is on whe
 
 ## Get the data, weights and video
 
-The images, video and weights are in one zip file (about 196 MB): **[wildlife-alert-data.zip](DATA_ZIP_LINK)**
+The images, video and weights (about 196 MB) are in this Google Drive folder:
+**[wildlife-alert-data](https://drive.google.com/drive/folders/110E8umWRAlWJeEi400wlHsWi5FM00Wo7?usp=sharing)**
 
-Unzip it in the repository folder. It adds three folders:
+1. Open the link and click **Download** (top right). Google Drive sends the folder as a zip.
+2. Unzip it.
+3. Place the three folders `data/`, `videos/` and `weights/` next to the test scripts.
+4. Run `python test_real_images.py --check` to confirm that the data is in the right place.
+
+The layout should be:
 
 ```
 data/WM-10-CameraTrap/
@@ -61,12 +67,14 @@ assets/               the example figures above
 
 ## Quick start (Google Colab)
 
+First download the Drive folder as a zip (see above). In Colab, upload the zip with the Files panel on the left, then run:
+
 ```python
 !git clone <this repository URL> repo
 %cd repo
-!pip install -q -r requirements.txt gdown
-!gdown --fuzzy "DATA_ZIP_LINK" -O wildlife-alert-data.zip
-!unzip -q wildlife-alert-data.zip
+!pip install -q -r requirements.txt
+!unzip -q -o "/content/*.zip" -d /content/dl
+!D=$(dirname "$(find /content/dl -type d -name data | head -1)"); cp -r "$D/data" "$D/videos" "$D/weights" .
 !python test_real_images.py --check          # data check only (no model is run)
 !python test_real_images.py --save-images    # 4 models on the 183 real images
 !python test_video.py --save-video           # 4 models on the video
